@@ -1,0 +1,99 @@
+(*Bisection Method Code*)
+bisectionMethod[f_, a_, b_, nmax_, errmax_] :=
+  Block[
+   {n = 1 (*iteration counter*),
+    p = { (a + b)/2 // N[#, {\[Infinity], 10}] &}(*midpoint vector*), 
+    aa = {a},
+    bb = {b} (*changeable bounds*),
+    ff = {f[(a + b)/2 // 
+        N[#, {\[Infinity], 10}] &]},(*function values*)
+    errAbs = {""} (*error check*),
+    errRel = {""}},
+   
+   (*Check if there is a zero at the bounds*)
+   If[ Sign[f[a]]*Sign[f[b]] == 0,(*Either f[a] or f[b] is 0!*)
+     If[f[a] == 0, 
+      Print["Zero found at bound a = ", a]; Return[Null, Block], 
+      Print["Zero found at bound b = ", b ]; Return[Null, Block]]
+     ]
+    
+    (*Check if there is a zero between the bounds*)
+    If[ Sign[f[a]]*Sign[f[b]] == 1, 
+     Print["Zero not guaranteed to be in between bounds"];
+     Return[Null, Block]
+     ]
+    
+    (*-------------------CODE------------------*)
+    Do[
+     (*Now we run the code!*)
+     (*See if we end up hitting a zero*)
+     If[f[p[[-1]]] == 0,
+      Print["Found a 0 exactly"];
+      Return[ {aa, bb, p, ff, errAbs, errRel}, Block]];
+     
+     (*Check with endpoint to replace*)
+     If[ Sign[f[aa[[-1]]]]*
+        Sign[f[p[[-1]]]] == -1, (*Midpoint is to the right of the \
+zero*)
+      bb = Append[bb, p[[-1]]]; aa = Append[aa, aa[[-1]]],
+      aa = Append[aa, p[[-1]]]; bb = Append[bb, bb[[-1]]]];
+     
+     p = Append[
+       p, (aa[[-1]] + bb[[-1]])/2 // N[#, {\[Infinity], 10}] &];
+     ff = Append[ff, f[p[[-1]]]];
+     (*Check tolerances*)
+     
+     errAbs = Append[errAbs, Abs[p[[-1]] - p[[-2]]]];
+     errRel = Append[errRel, errAbs[[-1]]/Abs[p[[-2]]]];
+     
+     
+     (*Tolerance check to see if we terminate the program*)
+     If[errAbs[[-1]] < errmax,
+      Return[ {aa, bb, p, ff, errAbs, errRel}, Block]
+      ],
+     
+     (*End Do-Loop*)
+     {n, 1, nmax}];
+   
+   (*We went to nmax without getting within errmax*)
+   Print["Nmax limit reached"];
+   Return[{aa, bb, p, ff, errAbs, errRel}]];
+   
+   
+   
+   (*Get the output of the code*)
+   f = (# + 2) (# + 1)^2 # (# - 1)^3 (# - 2) &;
+   {a, b, p, fp, errAbs, errRel} = 
+  bisectionMethod[f, -3, -0.5, 20, 10^-5];
+  
+  (*Table of results*)
+  Grid[
+ Prepend[
+  Table[{i, a[[i]], b[[i]], p[[i]], fp[[i]], 
+    ScientificForm@errAbs[[i]], ScientificForm@errRel[[i]]}, {i, 
+    Length@a}],
+  {"N", "a", "b", "p", "f(p)", "absolute error", "relative error"}], 
+ 
+ Frame -> All, 
+ ItemStyle -> Directive[FontFamily -> "Ubuntu Mono", FontSize -> 20],
+ Background -> {{LightPink}, {LightGray}}]
+ 
+ 
+ 
+ (*Animation of the midpoints converging to solution*)
+ Animate[
+ Block[{l, pt, t},
+  l = Table[
+    {Directive[Black],
+     Line[{{p[[i]], 0}, {p[[i]], f[p[[i]]]}}]}, {i, 1, n}];
+  pt = Table[
+    {Directive[Hue[f[p[[i]]]], PointSize[Large]],
+     Point[{p[[i]], f[p[[i]]]}]}, {i, 1, n}];
+  t = {Directive[FontFamily -> "Ubuntu Mono"], 
+    Text["p = " <> ToString[N@p[[n]]], {p[[n]], f[p[[n]] + .1]}]};
+  
+  Plot[f[x], {x, a[[1]], b[[1]]},
+   Epilog -> {l, pt, t},
+   AspectRatio -> 1/GoldenRatio]],
+ {n, 1, Length@a, 1},
+ AnimationRate -> .75]
