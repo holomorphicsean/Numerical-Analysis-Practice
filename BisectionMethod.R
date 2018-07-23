@@ -3,13 +3,8 @@
 options(digits = 15)
 
 #gets last element of a vector
-last <- function(vec) {
-  return(vec[length(vec)])
-}
-
-#gets the 2nd to last element of a vector
-last2 <- function (vec) {
-  return(vec[length(vec)-1])
+last <- function(vec, n = 1) {
+  return(vec[length(vec) - n + 1])
 }
 
 #packages the vectors into a nice data frame
@@ -66,8 +61,8 @@ BisectionMethod <- function(f,a,b,Nmax,errmax) {
   p <- c(p, .5*(last(aa) + last(bb)))
   fp <- c(fp, f(last(p)))
     
-  errAbs <- c(errAbs, abs(last(p) - last2(p)))
-  errRel <- c(errRel, last(errAbs)/last2(p))
+  errAbs <- c(errAbs, abs(last(p) - last(p,2)))
+  errRel <- c(errRel, last(errAbs)/last(p,2))
   
   N <- N + 1
   ##############
@@ -114,7 +109,7 @@ BisectionMethod <- function(f,a,b,Nmax,errmax) {
 
 ############
 #To get the code running, run functions here
-f <- function(x) { return (x- 2^(-x)) }
+f <- function(x) { return ( x^3 - x - 1 ) }
 
-output <- BisectionMethod(f,0,1,20,10^(-5))
+output <- BisectionMethod(f,1,2,14,10^(-4))
 print(output)
