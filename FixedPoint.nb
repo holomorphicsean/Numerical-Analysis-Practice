@@ -1,0 +1,99 @@
+(*The actual fixed point iteration method; provides a list for \
+further analysis*)
+fixedPointIteration[func_, start_, tol_, nmax_, overflowmax_, prec_] :=
+
+ 
+ NestWhileList[func, start, 
+   Abs[#2 - #1] > tol && Abs[#2 - #1] < overflowmax &, 2, nmax] // 
+  N[#, prec] &
+  
+  --------------------------------------------------------------------
+  
+  (*Functions for table and graph making*)
+  makeTable[fdata_] := Block[{errAbs, errRel, data},
+  
+  (*Absolute error*)
+  errAbs = Abs@Differences[fdata];
+  
+  (*Relative error*)
+  errRel = errAbs/Most[fdata];
+  
+  (*Put everything in a nice grid form*)
+  data = Flatten[#, 1] &@{
+     {{"N", "p", "absolute error", "relative error"}},
+     {{0, fdata[[1]], "-", "-"}},
+     Transpose[{Range[Length@fdata - 1], Rest@fdata, 
+       ScientificForm /@ errAbs, ScientificForm /@ errRel}]};
+  
+  (*Draw the grid*)
+  TextGrid[data,
+   Spacings -> {Automatic, .8},
+   Dividers -> All,
+   Alignment -> Right,
+   ItemStyle -> {FontFamily -> "Ubuntu Mono", FontSize -> 20}
+   ]
+  ]
+
+makePlot[f_, func_] := 
+  Block[{pl, initialLine, initialPoint, linesToYX, iterationPoints, 
+    yxPoints, horizontalLines},
+   Animate[
+    pl = Plot[{x, func[x]}, {x, .8 Min[f], 1.2 Max[f]},
+      PlotStyle -> {Directive[Black, Thick, Dashed], 
+        Directive[Thick, Green]}];
+    
+    (*Line and point for initial guess for p*)
+    initialLine = Graphics[{
+       Dashed, Gray,
+       Line[{{f[[1]], 0}, {f[[1]], func[f[[1]]]}}]
+       }];
+    initialPoint = Graphics[{
+       Red, PointSize[Large],
+       Point[{f[[1]], func[f[[1]]]}]
+       }];
+    
+    (*Table of lines for the mapping of the next iteration to the \
+line y = x*)
+    linesToYX = Table[
+      Graphics[{
+        Dashed, Gray,
+        Line[{{f[[i]], func[f[[i]]]}, {f[[i]], f[[i]]}}]
+        }],
+      {i, 2, n}];
+    (*Table of points corresponding to iterations*)
+    iterationPoints = Table[
+      Graphics[{
+        Red, PointSize[Large],
+        Point[{f[[i]], func[f[[i]]]}]
+        }],
+      {i, 2, n}];
+    (*Table of points corresponding to next iterations on y=x*)
+    yxPoints = Table[
+      Graphics[{
+        Lighter@Blend[{Blue, Green}], PointSize[Large],
+        Point[{f[[i]], f[[i]]}]
+        }],
+      {i, 2, n}];
+    (*Table of horizontal lines from the iteration point to y=x*)
+    horizontalLines = Table[
+      Graphics[{
+        Dashed, Gray,
+        Line[{{f[[i]], func[f[[i]]]}, {func[f[[i]]], func[f[[i]]]}}]
+        }],
+      {i, 1, n}];
+    Show[pl, initialLine, initialPoint, linesToYX, yxPoints, 
+     horizontalLines, iterationPoints],
+    {n, 1, Length@f},
+    AnimationRunning -> False, AnimationRate -> .75]];
+    
+    ------------------------------------------------------------------------------------
+    (*Example*)
+    func = # - (#^3 - 25)/(6 #^2) &;
+start = 2.5;
+tol = 10^-8;
+nmax = 30;
+overflowmax = 1000;
+prec = 12;
+f = fixedPointIteration[func, start, tol, nmax, overflowmax, prec];
+makeTable[f]
+makePlot[f,func]
